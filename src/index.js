@@ -6,33 +6,13 @@ const reviewForm = document.querySelector('form.review-form');
 const reviewInput = document.querySelector('form.review-form textarea');
 const reviewsList = document.querySelector('ul.reviews');
 const allBeersList = document.querySelector('nav > ul');
+
 let beerToDisplay;
 
 const getData = async (url) => {
     const response = await fetch(url);
     const data = response.json();
     return data;
-}
-
-const renderBeerReviews = function (reviews) {
-    reviewsList.innerHTML = "";
-    reviews.forEach(review => {
-        const reviewItem = document.createElement('li');
-        const reviewButton = document.createElement('button');
-        reviewButton.innerHTML = "Delete";
-        reviewButton.addEventListener('click', function () {
-            this.closest('li').remove();
-        })//Deleting of review is not persisted.
-        reviewItem.innerHTML = review;
-        reviewItem.appendChild(reviewButton);
-        reviewsList.appendChild(reviewItem);
-    });
-}
-const renderBeerDetails = function (beer) {
-    beerName.innerHTML = beer.name;
-    beerImage.setAttribute("src", `${beer.image_url}`);
-    beerDescription.innerHTML = beer.description;
-    renderBeerReviews(beer.reviews);
 }
 
 const renderBeerMenu = async () => {
@@ -48,12 +28,50 @@ const renderBeerMenu = async () => {
     })
 }
 
+const renderBeerReviews = function (reviews) {
+    reviewsList.innerHTML = "";
+    reviews.forEach((review, buttonId) => {
+        const reviewItem = document.createElement('li');
+        const reviewButton = document.createElement('button');
+        reviewButton.setAttribute("id", `${buttonId}`);
+        reviewButton.innerHTML = "Delete";
+        reviewButton.addEventListener('click', async function () {
+            const updatedReviews = beerToDisplay.reviews;
+            const deleteId = reviewButton.id;
+            updatedReviews.splice(deleteId, 1);
+            let patchObj = {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify({
+                    "reviews": updatedReviews,
+                 })
+            };
+            await fetch(`http://localhost:3000/beers/${beerToDisplay.id}`, patchObj);
+            renderBeerReviews(updatedReviews);
+            beerToDisplay.reviews = updatedReviews;
+        });
+        reviewItem.innerHTML = review;
+        reviewItem.appendChild(reviewButton);
+        reviewsList.appendChild(reviewItem);
+    });
+}
+
+const renderBeerDetails = function (beer) {
+    beerName.innerHTML = beer.name;
+    beerImage.setAttribute("src", `${beer.image_url}`);
+    beerDescription.innerHTML = beer.description;
+    renderBeerReviews(beer.reviews);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     beerToDisplay = await getData('http://localhost:3000/beers/1');
     renderBeerDetails(beerToDisplay);
     allBeersList.innerHTML = "";
     renderBeerMenu();
-})
+});
 
 beerDescForm.addEventListener('submit', async function (event) {
     event.preventDefault();
@@ -68,7 +86,7 @@ beerDescForm.addEventListener('submit', async function (event) {
         })
     };
     await fetch(`http://localhost:3000/beers/${beerToDisplay.id}`, patchObj);
-})
+});
 
 reviewForm.addEventListener('submit', async function (event) {
     event.preventDefault();
@@ -85,4 +103,6 @@ reviewForm.addEventListener('submit', async function (event) {
     };
     await fetch(`http://localhost:3000/beers/${beerToDisplay.id}`, patchObj);
     renderBeerReviews(updatedReviews);
-})
+    reviewInput.value = "";
+    beerToDisplay.reviews = updatedReviews;
+});
