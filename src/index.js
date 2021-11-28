@@ -35,36 +35,6 @@ const renderBeerDetails = function (beer) {
     renderBeerReviews(beer.reviews);
 }
 
-const changeBeerDesciption = async function (id, text) {
-    let patchObj = {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({
-          "description": text,
-        })
-    };
-    await fetch(`http://localhost:3000/beers/${id}`, patchObj);
-}
-
-const addReview = async function (id, reviews, text) {
-    const updatedReviews = [...reviews, text];
-    let patchObj = {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({
-          "reviews": updatedReviews,
-        })
-    };
-    await fetch(`http://localhost:3000/beers/${id}`, patchObj);
-    renderBeerReviews(updatedReviews);
-}
-
 const renderBeerMenu = async () => {
     const allBeers = await getData('http://localhost:3000/beers');
     allBeers.forEach(function(beer) {
@@ -87,10 +57,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 beerDescForm.addEventListener('submit', async function (event) {
     event.preventDefault();
-    await changeBeerDesciption(beerToDisplay.id, beerDescription.value);
+    let patchObj = {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          "description": beerDescription.value,
+        })
+    };
+    await fetch(`http://localhost:3000/beers/${beerToDisplay.id}`, patchObj);
 })
 
 reviewForm.addEventListener('submit', async function (event) {
     event.preventDefault();
-    await addReview(beerToDisplay.id, beerToDisplay.reviews, reviewInput.value)
+    const updatedReviews = [...beerToDisplay.reviews, reviewInput.value];
+    let patchObj = {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          "reviews": updatedReviews,
+        })
+    };
+    await fetch(`http://localhost:3000/beers/${beerToDisplay.id}`, patchObj);
+    renderBeerReviews(updatedReviews);
 })
